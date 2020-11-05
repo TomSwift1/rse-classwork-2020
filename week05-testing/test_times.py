@@ -29,3 +29,7 @@ def test_start_end_same_input():
     result = compute_overlap_time(large, short)
     expected = [('2010-01-12 13:00:00', '2010-01-12 13:00:00')]
     assert result == expected
+    
+def write_backwards_time():
+    with pytest.raises(ValueError):
+        large = time_range("2010-01-12 14:00:00", "2010-01-12 13:00:00")
