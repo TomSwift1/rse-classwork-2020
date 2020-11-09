@@ -1,31 +1,23 @@
 from times import time_range, compute_overlap_time
 import pytest
-@pytest.mark.parametrize("range1,range2,expected",[
-                       
-                         (time_range("2010-01-12 10:00:00", "2010-01-12 12:00:00"),
-                           time_range("2010-01-12 10:30:00", "2010-01-12 10:45:00", 2, 60), 
-                           [('2010-01-12 10:30:00', '2010-01-12 10:37:00'), ('2010-01-12 10:38:00', '2010-01-12 10:45:00')]),
-                          
-                          (time_range("2019-01-10 10:00:00", "2019-01-10 11:00:00"),
-                           time_range("2019-01-10 11:20:00", "2019-01-10 11:30:00"),
-                          []),
-                          
-                          (time_range("2010-01-12 10:00:00", "2010-01-12 13:00:00",2,60),
-                          time_range("2010-01-12 10:30:00", "2010-01-12 11:35:00", 2, 60),
-                          [('2010-01-12 10:30:00', '2010-01-12 11:02:00'),
-     ('2010-01-12 11:03:00', '2010-01-12 11:29:30'),
-     ('2010-01-12 11:30:30', '2010-01-12 11:35:00')]),
-                          
-                         (time_range("2010-01-12 10:00:00", "2010-01-12 13:00:00"),
-                         time_range("2010-01-12 13:00:00", "2010-01-12 14:00:00"),
-                         [('2010-01-12 13:00:00', '2010-01-12 13:00:00')])
-])
-                            
+import yaml
+
+with open("fixture.yaml", 'r') as yamlfile:
+    fixture = yaml.safe_load(yamlfile)
+    print(fixture)
 
 
-def test_eval(range1,range2, expected):
-    assert compute_overlap_time(range1,range2) == expected
+@pytest.mark.parametrize("test_name", fixture)
+# fixture is a list of dictionaries [{'generic':...}, {'no_overlap':...}, ...]
+def test_time_range_overlap(test_name):
+    # test_name will be a dictionary, e.g. for the first case: {'generic': {'time_range_1':..., 'time_range2':..., 'expected':...}
+    properties = list(test_name.values())[0]
+    first_range = time_range(*properties['time_range_1'])
+    second_range = time_range(*properties['time_range_2'])
+    expected_overlap = [(start, stop) for start, stop in properties['expected']]
+    assert compute_overlap_time(first_range, second_range) == expected_overlap
     
 def write_backwards_time():
-    with pytest.raises(ValueError):
-        large = time_range("2010-01-12 14:00:00", "2010-01-12 13:00:00")
+    with pytest.raises(ValueError) as e:
+        time_range("2010-01-12 10:00:00", "2010-01-12 09:30:00")
+        assert e.match('The end of the time range has to come  after its start.')
